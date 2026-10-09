@@ -3,7 +3,7 @@ import uuid
 class BankAccount:
 
     def __init__(self, owner, balance=0.0):
-        self.account_id = str(uuid.uuid4())
+        self.account_id = str(uuid.uuid4())[:8] # Generate a unique account ID
         self.owner = owner
         self.balance = balance
         self.transactions = []

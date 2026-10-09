@@ -24,12 +24,12 @@ class UpdateAccount(BaseModel):
     initial_balance: float = Field(default=0.0, ge=0.0)
 
 @app.get("/")
-def read_root():
+async def read_root():
     return {"message": "Welcome to the Bank API!"}
 
 # POST /accounts — create new account
 @app.post("/accounts")
-def create_account(data: CreateAccount):
+async def create_account(data: CreateAccount):
     account = BankAccount(data.owner, data.initial_balance)
     accounts[account.account_id] = account
     return {
@@ -42,7 +42,7 @@ def create_account(data: CreateAccount):
 
 # GET /accounts/{account_id} — get balance
 @app.get("/accounts/{account_id}")
-def get_balance(account_id: str):
+async def get_balance(account_id: str):
     
     if account_id not in accounts:
         raise HTTPException(status_code=404, detail="Account not found")
@@ -52,7 +52,7 @@ def get_balance(account_id: str):
 
 # POST /accounts/{account_id}/deposit — deposit
 @app.post("/accounts/{account_id}/deposit")
-def deposit(account_id: str, data: TransactionRequest):
+async def deposit(account_id: str, data: TransactionRequest):
     if account_id not in accounts:
         raise HTTPException(status_code=404, detail="Account not found")
     return accounts[account_id].deposit(data.amount)
@@ -60,7 +60,7 @@ def deposit(account_id: str, data: TransactionRequest):
 
 # POST /accounts/{account_id}/withdraw — withdraw
 @app.post("/accounts/{account_id}/withdraw")
-def withdraw(account_id: str, data: TransactionRequest):
+async def withdraw(account_id: str, data: TransactionRequest):
     if account_id not in accounts:
         raise HTTPException(status_code=404, detail="Account not found")
     return accounts[account_id].withdraw(data.amount)
@@ -68,13 +68,13 @@ def withdraw(account_id: str, data: TransactionRequest):
 
 # GET /accounts/{account_id}/transactions — get history
 @app.get("/accounts/{account_id}/transactions")
-def get_transactions(account_id: str):
+async def get_transactions(account_id: str):
     if account_id not in accounts:
         raise HTTPException(status_code=404, detail="Account not found")
     return accounts[account_id].get_transactions()
 
 @app.put("/accounts/{account_id}")
-def update_account(account_id: str, data: UpdateAccount):
+async def update_account(account_id: str, data: UpdateAccount):
     if account_id not in accounts:
         raise HTTPException(status_code=404, detail="Account not found")
     
@@ -90,9 +90,22 @@ def update_account(account_id: str, data: UpdateAccount):
     }
 
 @app.delete("/accounts/{account_id}")
-def delete_account(account_id: str):
+async def delete_account(account_id: str):
     if account_id not in accounts:
         raise HTTPException(status_code=404, detail="Account not found")
     
     del accounts[account_id]
     return {"message": "Account deleted"}
+
+
+@app.get("/accounts")
+async def get_accounts(owner: str = None, min_balance: float = None, max_balance: float = None):
+    results = list (accounts.values())
+    if owner:
+        results = [ a for a in results if a.owner.lower() == owner.lower()]
+    if min_balance:
+        results = [ a for a in results if a.balance >= min_balance]
+    if max_balance:
+        results = [ a for a in results if a.balance <= max_balance]
+
+    return results
