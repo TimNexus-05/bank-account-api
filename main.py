@@ -2,8 +2,33 @@ from fastapi import FastAPI, HTTPException,Depends
 from pydantic import BaseModel,Field
 from bankapi import BankAccount
 from fastapi.middleware.cors import CORSMiddleware
+import time
+import logging
+
+
+
 
 app = FastAPI()
+
+# CORS (Cross-Origin Resource Sharing) middleware configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+@app.middleware("http")
+async def log_requests(request, call_next):
+    logger.info(f"Incoming request: {request.method} {request.url}")
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = time.time() - start_time
+    logger.info(f"Request processed in {process_time:.4f} seconds")
+    return response
 
 # In-memory storage — list of accounts
 accounts = {}
